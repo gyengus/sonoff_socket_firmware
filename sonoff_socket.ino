@@ -4,8 +4,6 @@
 
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
-#include <ESP8266HTTPClient.h>
-#include <ESP8266httpUpdate.h>
 #include <Ticker.h>
 #include "PubSubClient.h"
 
@@ -14,7 +12,6 @@
 #define BUTTON 0
 
 #define SPIFFS_ALIGNED_OBJECT_INDEX_TABLES 1
-#define DEBUG_HTTP_UPDATE Serial.printf
 
 ESP8266WebServer server(80);
 WiFiClient espClient;
@@ -43,9 +40,20 @@ void serveJSON() {
               + "\"realFlashSize\": \" + String(ESP.getFlashChipRealSize()) + \","
               + "\"updateTopic\": \"" + MQTT_UPDATE_TOPIC_FULL + "\","
               + "\"relayState\": \"" + (relayState ? "on" : "off") + "\","
-              + "\"mqttState\": \"" + (client.connected() ? "connected" : "disconnected") + "\""
+              + "\"mqttState\": \"" + (client.connected() ? "" : "dis") + "connected\""
               + "}";
   server.send(200, "application/json", json);
+}
+
+void mqttReConnect() {
+  if (client.connected()) {
+    client.disconnect();
+    delay(50);
+  }
+  connectToMQTT();
+  lastMQTTReconnectAttempt = 0;
+  delay(10);
+  serveJSON();
 }
 
 boolean connectToMQTT() {
@@ -76,7 +84,7 @@ void receiveFromMQTT(const MQTT::Publish& pub) {
     ESP.wdtFeed();
     uint32_t size = pub.payload_len();
     if (size == 0) {
-      Serial.println("Error, sketch size is 0");
+      Serial.println("Error, sketch size is 0 B");
     } else {
       Serial.println("Receiving OTA of " + String(size) + " bytes...");
       Serial.setDebugOutput(true);
@@ -155,9 +163,8 @@ void setup() {
   connectToWiFi();
 
   server.on("/", serveJSON);
+  server.on("/mqttreconnect", mqttReConnect);
   server.begin();
-
-  ESPhttpUpdate.rebootOnUpdate(false);
 
   MQTT_UPDATE_TOPIC_FULL = MQTT_DEVICE_TOPIC + String(ESP.getChipId()) + String("/update");
   client.set_server(MQTT_BROKER_ADDRESS, MQTT_BROKER_PORT);
