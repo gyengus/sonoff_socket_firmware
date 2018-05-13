@@ -34,28 +34,6 @@ void setRelay(boolean state) {
   publishToMQTT();
 }
 
-void handleRoot() {
-  String body = "<!doctype html><html lang='hu'><head><title>Sonoff Socket</title><meta charset='UTF-8'/><style>body{margin: 0px;padding: 20px;font: 14px Verdana,Arial,sans-serif;}#container{display: block;border: 1px solid #dddddd;border-radius: 3px;box-shadow: 0 3px 5px 0 rgba(50,50,50,.25);width: 400px;max-width: 500px;margin: 0px auto;background: #ffffff;padding: 10px;}#sensor_name{font-size: 1.2em;text-align: center;font-weight: bold;margin-bottom: 10px;border-bottom: 1px solid #dddddd;}.left{float: left;width: 180px;}.right{float: right;text-align: right;width: 210px;}.clearboth{clear: both;height: 5px;}</style></head><body><div id='container'><div id='sensor_name'>" + String(DEVICE_NAME) + "</div>"
-              + "<div class='left'>Serial number</div><div class='right'>" + String(ESP.getChipId()) + "</div>"
-              + "<div class='clearboth'></div>"
-              + "<div class='left'>Sketch size</div><div class='right'>" + String(ESP.getSketchSize()) + " B</div>"
-              + "<div class='clearboth'></div>"
-              + "<div class='left'>Free size</div><div class='right'>" + String(ESP.getFreeSketchSpace()) + " B</div>"
-              + "<div class='clearboth'></div>"
-              + "<div class='left'>Flash size</div><div class='right'>" + String(ESP.getFlashChipSize()) + " B</div>"
-              + "<div class='clearboth'></div>"
-              + "<div class='left'>Real flash size</div><div class='right'>" + String(ESP.getFlashChipRealSize()) + " B</div>"
-              + "<div class='clearboth'></div>"
-              + "<div class='left'>MQTT firmware update topic</div><div class='right'>" + MQTT_UPDATE_TOPIC_FULL + "</div>"
-              + "<div class='clearboth'></div>"
-              + "<div class='left'>Konnektor</div><div class='right'>" + (relayState ? "bekapcsolva" : "kikapcsolva") + "</div>"
-              + "<div class='clearboth'></div>"
-              + "<div class='left'>MQTT</div><div class='right'>" + (client.connected() ? "OK" : "nincs kapcsolat") + "</div>"
-              + "<div class='clearboth'></div>"
-              + "</div></body></html>";
-  server.send(200, "text/html", body);
-}
-
 void serveJSON() {
   String json = "{\"deviceName\": \"" + String(DEVICE_NAME) + "\","
               + "\"chipId\": \"" + String(ESP.getChipId()) + "\","
@@ -176,8 +154,7 @@ void setup() {
 
   connectToWiFi();
 
-  server.on("/", handleRoot);
-  server.on("/json", serveJSON);
+  server.on("/", serveJSON);
   server.begin();
 
   ESPhttpUpdate.rebootOnUpdate(false);
