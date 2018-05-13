@@ -26,8 +26,6 @@ long lastWiFiReconnectAttempt = 0;
 Ticker btn_timer;
 unsigned long btnCount = 0;
 String MQTT_UPDATE_TOPIC_FULL = "";
-String MQTT_UPDATEURL_TOPIC_FULL = "";
-String ota_update_url = "";
 boolean requireRestart = false;
 
 void setRelay(boolean state) {
@@ -63,7 +61,6 @@ boolean connectToMQTT() {
   if (client.connect(clientId.c_str())) {
     client.subscribe(MQTT_CONTROL_TOPIC);
     client.subscribe(MQTT_UPDATE_TOPIC_FULL);
-    client.subscribe(MQTT_UPDATEURL_TOPIC_FULL);
     publishToMQTT();
   }
   return client.connected();
@@ -100,10 +97,6 @@ void receiveFromMQTT(const MQTT::Publish& pub) {
         requireRestart = true;
       }
     }
-  } else if (pub.topic() == MQTT_UPDATEURL_TOPIC_FULL) {
-    ESP.wdtFeed();
-    Serial.println("Update url: " + pub.payload_string());
-    ota_update_url = pub.payload_string();
   }
   digitalWrite(STATLED, true);
 }
@@ -175,7 +168,6 @@ void setup() {
   ESPhttpUpdate.rebootOnUpdate(false);
 
   MQTT_UPDATE_TOPIC_FULL = MQTT_DEVICE_TOPIC + String(ESP.getChipId()) + String("/update");
-  MQTT_UPDATEURL_TOPIC_FULL = MQTT_DEVICE_TOPIC + String(ESP.getChipId()) + String("/updateurl");
   client.set_server(MQTT_BROKER_ADDRESS, MQTT_BROKER_PORT);
   client.set_callback(receiveFromMQTT);
   lastMQTTReconnectAttempt = 0;
@@ -202,36 +194,6 @@ void loop() {
   }
   if (WiFi.status() == WL_CONNECTED) {
     server.handleClient();
-    
-    if (ota_update_url != "") {
-      digitalWrite(STATLED, false);
-      Serial.println("Downloading firmware");
-      Serial.setDebugOutput(true);
-      t_httpUpdate_return ret = ESPhttpUpdate.update(ota_update_url);
-      ESP.wdtFeed();
-      switch(ret) {
-          case HTTP_UPDATE_FAILED:
-              Serial.printf("HTTP_UPDATE_FAILED Error (%d): %s\n", ESPhttpUpdate.getLastError(), ESPhttpUpdate.getLastErrorString().c_str());
-              ota_update_url = "";
-              break;
-  
-          case HTTP_UPDATE_NO_UPDATES:
-              Serial.println("HTTP_UPDATE_NO_UPDATES");
-              break;
-  
-          case HTTP_UPDATE_OK:
-              Serial.println("HTTP_UPDATE_OK");
-              ota_update_url = "";
-              Serial.println("Clearing retained message.");
-              client.publish(MQTT::Publish(MQTT_UPDATEURL_TOPIC_FULL, "").set_retain());
-              client.loop();
-              requireRestart = true;
-              break;
-      }
-      digitalWrite(STATLED, true);
-  
-    }
-
     if (client.connected()) {
       client.loop();
     } else {
