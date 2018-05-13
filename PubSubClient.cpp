@@ -10,6 +10,7 @@
 PubSubClient::PubSubClient(Client& c) :
   _callback(nullptr),
   _client(c),
+  _parser(c),
   _max_retries(10),
   isSubAckFound(false)
 {}
@@ -17,6 +18,7 @@ PubSubClient::PubSubClient(Client& c) :
 PubSubClient::PubSubClient(Client& c, IPAddress &ip, uint16_t port) :
   _callback(nullptr),
   _client(c),
+  _parser(c),
   _max_retries(10),
   isSubAckFound(false),
   server_ip(ip),
@@ -26,6 +28,7 @@ PubSubClient::PubSubClient(Client& c, IPAddress &ip, uint16_t port) :
 PubSubClient::PubSubClient(Client& c, String hostname, uint16_t port) :
   _callback(nullptr),
   _client(c),
+  _parser(c),
   _max_retries(10),
   isSubAckFound(false),
   server_port(port),
@@ -46,15 +49,13 @@ PubSubClient& PubSubClient::set_server(String hostname, uint16_t port) {
 }
 
 MQTT::Message* PubSubClient::_recv_message(void) {
-  MQTT::Message *msg = MQTT::readPacket(_client);
+  MQTT::Message *msg = _parser.parse();
   if (msg != nullptr)
     lastInActivity = millis();
   return msg;
 }
 
-bool PubSubClient::_send_message(MQTT::Message& msg, bool need_reply) {
-  MQTT::message_type r_type = msg.response_type();
-
+bool PubSubClient::_send_message(MQTT::Message& msg) {
   if (msg.need_packet_id())
     msg.set_packet_id(_next_packet_id());
 
@@ -69,17 +70,34 @@ bool PubSubClient::_send_message(MQTT::Message& msg, bool need_reply) {
   }
   lastOutActivity = millis();
 
-  if (!need_reply || (r_type == MQTT::None))
-    return true;
+  return true;
+}
 
-  if (!_wait_for(r_type, msg.packet_id())) {
+MQTT::Message* PubSubClient::_send_message_with_response(MQTT::Message& msg) {
+  if (msg.need_packet_id())
+    msg.set_packet_id(_next_packet_id());
+
+  uint8_t retries = 0;
+ send:
+  if (!msg.send(_client)) {
     if (retries < _max_retries) {
       retries++;
       goto send;
     }
-    return false;
+    return nullptr;
   }
-  return true;
+  lastOutActivity = millis();
+
+  MQTT::Message *response = _wait_for(msg.response_type(), msg.packet_id());
+  if (response == nullptr) {
+    if (retries < _max_retries) {
+      retries++;
+      goto send;
+    }
+    return nullptr;
+  }
+
+  return response;
 }
 
 void PubSubClient::_process_message(MQTT::Message* msg) {
@@ -99,8 +117,10 @@ void PubSubClient::_process_message(MQTT::Message* msg) {
 
 	{
 	  MQTT::PublishRec pubrec(pub->packet_id());
-	  if (!_send_message(pubrec, true))
+	  MQTT::Message *response = _send_message_with_response(pubrec);
+	  if (response == nullptr)
 	    return;
+	  delete response;
 	}
 
 	{
@@ -123,10 +143,10 @@ void PubSubClient::_process_message(MQTT::Message* msg) {
   }
 }
 
-bool PubSubClient::_wait_for(MQTT::message_type match_type, uint16_t match_pid) {
+MQTT::Message* PubSubClient::_wait_for(MQTT::message_type wait_type, uint16_t wait_pid) {
   while (!_client.available()) {
     if (millis() - lastInActivity > keepalive * 1000UL)
-      return false;
+      return nullptr;
     yield();
   }
 
@@ -134,13 +154,13 @@ bool PubSubClient::_wait_for(MQTT::message_type match_type, uint16_t match_pid) 
     // Read the packet and check it
     MQTT::Message *msg = _recv_message();
     if (msg != nullptr) {
-      if (msg->type() == match_type) {
-		uint16_t pid = msg->packet_id();
-		delete msg;
-		if (match_pid)
-			return pid == match_pid;
-		return true;
-      }else if(msg->type() == MQTT::SUBACK){ // if the current message is not the one we want
+      if (msg->type() == wait_type) {
+	if ((wait_pid > 0) && (msg->packet_id() != wait_pid)) {
+	  delete msg;
+	  return nullptr;
+	}
+	return msg;
+      } else if (msg->type() == MQTT::SUBACK) { // if the current message is not the one we want
         // Signal that we found a SUBACK message
         isSubAckFound = true;
       }
@@ -148,10 +168,10 @@ bool PubSubClient::_wait_for(MQTT::message_type match_type, uint16_t match_pid) 
       _process_message(msg);
 
       // After having proceeded new incoming packets, we check if our response as not already been processed
-      if(match_type == MQTT::SUBACK && isSubAckFound){
+      if ((wait_type == MQTT::SUBACK) && isSubAckFound) {
         isSubAckFound = false;
         // Return false will cause a resend of a SUBSCRIBE message (and so a new chance to get a SUBACK)
-        return false; 
+        return nullptr;
       }
 
       delete msg;
@@ -160,7 +180,7 @@ bool PubSubClient::_wait_for(MQTT::message_type match_type, uint16_t match_pid) 
     yield();
   }
 
-  return false;
+  return nullptr;
 }
 
 bool PubSubClient::connect(String id) {
@@ -196,12 +216,23 @@ bool PubSubClient::connect(MQTT::Connect &conn) {
   lastInActivity = millis();	// Init this so that _wait_for() doesn't think we've already timed-out
   keepalive = conn.keepalive();	// Store the keepalive period from this connection
 
-  if (!_send_message(conn, true)) {
+  MQTT::Message *response = _send_message_with_response(conn);
+  if (response == nullptr) {
     _client.stop();
     return false;
   }
 
-  return true;
+  bool ret = true;
+  if (response->type() == MQTT::CONNACK) {
+    MQTT::ConnectAck *ack = static_cast<MQTT::ConnectAck*>(response);
+    if (ack->rc() > 0) {
+      _client.stop();
+      ret = false;
+    }
+  }
+  delete response;
+
+  return ret;
 }
 
 bool PubSubClient::loop() {
@@ -272,20 +303,34 @@ bool PubSubClient::publish(MQTT::Publish &pub) {
   if (!connected())
     return false;
 
+  MQTT::Message *response;
   switch (pub.qos()) {
   case 0:
     return _send_message(pub);
 
   case 1:
-    return _send_message(pub, true);
+    response = _send_message_with_response(pub);
+    if (response == nullptr)
+      return false;
+
+    delete response;
+    return true;
 
   case 2:
     {
-      if (!_send_message(pub, true))
+      response =_send_message_with_response(pub);
+      if (response == nullptr)
 	return false;
 
+      delete response;
+
       MQTT::PublishRel pubrel(pub.packet_id());
-      return _send_message(pubrel, true);
+      response = _send_message_with_response(pubrel);
+      if (response == nullptr)
+	return false;
+
+      delete response;
+      return true;
     }
   }
   return false;
@@ -306,7 +351,12 @@ bool PubSubClient::subscribe(MQTT::Subscribe &sub) {
   if (!connected())
     return false;
 
-  return _send_message(sub, true);
+  MQTT::Message *response = _send_message_with_response(sub);
+  if (response == nullptr)
+    return false;
+
+  delete response;
+  return true;
 }
 
 bool PubSubClient::unsubscribe(String topic) {
@@ -321,7 +371,12 @@ bool PubSubClient::unsubscribe(MQTT::Unsubscribe &unsub) {
   if (!connected())
     return false;
 
-  return _send_message(unsub, true);
+  MQTT::Message *response = _send_message_with_response(unsub);
+  if (response == nullptr)
+    return false;
+
+  delete response;
+  return true;
 }
 
 void PubSubClient::disconnect() {

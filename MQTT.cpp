@@ -17,6 +17,7 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+#include <Arduino.h>
 #include "MQTT.h"
 
 namespace MQTT {
@@ -176,103 +177,177 @@ namespace MQTT {
   }
 
 
-  // Parser
-  Message* readPacket(Client& client) {
-    // Read type and flags
-    uint8_t type = read<uint8_t>(client);
-    uint8_t flags = type & 0x0f;
-    type >>= 4;
+  // Packet parser
+  PacketParser::PacketParser(Client& client) :
+    _client(client),
+    _state(State::Start),
+    _msg(nullptr)
+  {}
 
-    // Read the remaining length
-    uint32_t remaining_length = 0;
+  bool PacketParser::_read_type_flags(void) {
+    if (_client.available() < 1)
+      return false;
+
+    // Read type and flags
+    uint8_t type_flags = read<uint8_t>(_client);
+    _flags = type_flags & 0x0f;
+    _type = type_flags >> 4;
+
+    _state = State::ReadLength;
+    _remaining_length = 0;
+    _length_shifter = 0;
+
+    return true;
+  }
+
+  bool PacketParser::_read_length(void) {
+    // Read remaining length of packet
     {
-      uint8_t lenbuf[4], lenlen = 0;
-      uint8_t shifter = 0;
       uint8_t digit;
       do {
-	digit = read<uint8_t>(client);
-	lenbuf[lenlen++] = digit;
-	remaining_length += (digit & 0x7f) << shifter;
-	shifter += 7;
+	if (_client.available() < 1)
+	  return false;
+
+	digit = read<uint8_t>(_client);
+	_remaining_length += (digit & 0x7f) << _length_shifter;
+	_length_shifter += 7;
       } while (digit & 0x80);
     }
+    _to_read = _remaining_length;
 
-    // Read variable header and/or payload
-    uint8_t *remaining_data = nullptr;
-    if (remaining_length > 0) {
-      if (remaining_length > MQTT_TOO_BIG) {
-	switch (type) {
-	case PUBLISH:
-	  return new Publish(flags, client, remaining_length);
-	case SUBACK:
-	  return new SubscribeAck(client, remaining_length);
-	default:
-	  return nullptr;
-	}
-      }
-
-      remaining_data = new uint8_t[remaining_length];
-      {
-	uint8_t *read_point = remaining_data;
-	uint32_t rem = remaining_length;
-	while (client.available() && rem) {
-	  int read_size = client.read(read_point, rem);
-	  if (read_size == -1)
-	    continue;
-	  rem -= read_size;
-	  read_point += read_size;
-	}
-      }
+    // If the packet is too big, only allow streaming it
+    if (_remaining_length > MQTT_TOO_BIG) {
+      _state = State::CreateObject;
+      return true;
     }
 
-    // Use the type value to return an object of the appropriate class
-    Message *obj;
-    switch (type) {
+    // Otherwise, allocate a buffer to read the data
+    if (_remaining_length > 0)
+      _remaining_data = new uint8_t[_remaining_length];
+    else
+      _remaining_data = nullptr;
+    _read_point = _remaining_data;
+
+    _state = State::ReadContents;
+
+    return true;
+  }
+
+  bool PacketParser::_read_remaining(void) {
+    while ((_to_read > 0) && (_client.available() > 0)) {
+      int read_size = _client.read(_read_point, _to_read);
+      if (read_size == -1)
+	return false;
+      _to_read -= read_size;
+      _read_point += read_size;
+    }
+
+    // Come around again if we haven't read everything
+    if (_to_read > 0)
+      return false;
+
+    _state = State::CreateObject;
+    return true;
+  }
+
+  bool PacketParser::_construct_object(void) {
+    if (_remaining_length > MQTT_TOO_BIG) {
+      switch (_type) {
+      case PUBLISH:
+	_msg = new Publish(_flags, _client, _remaining_length);
+	break;
+
+      case SUBACK:
+	_msg = new SubscribeAck(_client, _remaining_length);
+	break;
+
+      default:
+	_msg = nullptr;
+      }
+      _state = State::HaveObject;
+      return true;
+    }
+
+    switch (_type) {
     case CONNACK:
-      obj = new ConnectAck(remaining_data, remaining_length);
+      _msg = new ConnectAck(_remaining_data, _remaining_length);
       break;
 
     case PUBLISH:
-      obj = new Publish(flags, remaining_data, remaining_length);
+      _msg = new Publish(_flags, _remaining_data, _remaining_length);
       break;
 
     case PUBACK:
-      obj = new PublishAck(remaining_data, remaining_length);
+      _msg = new PublishAck(_remaining_data, _remaining_length);
       break;
 
     case PUBREC:
-      obj = new PublishRec(remaining_data, remaining_length);
+      _msg = new PublishRec(_remaining_data, _remaining_length);
       break;
 
     case PUBREL:
-      obj = new PublishRel(remaining_data, remaining_length);
+      _msg = new PublishRel(_remaining_data, _remaining_length);
       break;
 
     case PUBCOMP:
-      obj = new PublishComp(remaining_data, remaining_length);
+      _msg = new PublishComp(_remaining_data, _remaining_length);
       break;
 
     case SUBACK:
-      obj = new SubscribeAck(remaining_data, remaining_length);
+      _msg = new SubscribeAck(_remaining_data, _remaining_length);
       break;
 
     case UNSUBACK:
-      obj = new UnsubscribeAck(remaining_data, remaining_length);
+      _msg = new UnsubscribeAck(_remaining_data, _remaining_length);
       break;
 
     case PINGREQ:
-      obj = new Ping;
+      _msg = new Ping;
       break;
 
     case PINGRESP:
-      obj = new PingResp;
+      _msg = new PingResp;
       break;
 
     }
-    if (remaining_data != nullptr)
-      delete [] remaining_data;
+    if (_remaining_data != nullptr)
+      delete [] _remaining_data;
 
-    return obj;
+    _state = State::HaveObject;
+    return true;
+  }
+
+  Message* PacketParser::parse(void) {
+    while (_state != State::HaveObject) {
+      switch (_state) {
+      case State::ReadTypeFlags:
+	if (!_read_type_flags())
+	  return nullptr;
+
+	break;
+
+      case State::ReadLength:
+	if (!_read_length())
+	  return nullptr;
+
+	break;
+
+      case State::ReadContents:
+	if (!_read_remaining())
+	  return nullptr;
+
+	break;
+
+      case State::CreateObject:
+	if (!_construct_object())
+	  return nullptr;
+
+	break;
+      }
+    }
+
+    _state = State::Start;	// Reset the parser state machine
+    return _msg;
   }
 
 

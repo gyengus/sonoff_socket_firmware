@@ -23,12 +23,15 @@ long lastWiFiReconnectAttempt = 0;
 Ticker btn_timer;
 unsigned long btnCount = 0;
 String MQTT_UPDATE_TOPIC_FULL = "";
+String MQTT_DEVICE_TOPIC_FULL = "";
 boolean requireRestart = false;
+
+bool publishToMQTT(String topic, String payload, bool retain = true);
 
 void setRelay(boolean state) {
   digitalWrite(RELAY, state);
   relayState = state;
-  publishToMQTT();
+  publishToMQTT(MQTT_STATE_TOPIC, (relayState ? "on" : "off"), true);
 }
 
 void serveJSON() {
@@ -57,11 +60,14 @@ void mqttReConnect() {
 }
 
 boolean connectToMQTT() {
-  String clientId = DEVICE_NAME;
-  if (client.connect(clientId.c_str())) {
+  MQTT::Connect con(String(ESP.getChipId()).c_str());
+  con.set_will(MQTT_DEVICE_TOPIC_FULL, "");
+  if (client.connect(con)) {
     client.subscribe(MQTT_CONTROL_TOPIC);
     client.subscribe(MQTT_UPDATE_TOPIC_FULL);
-    publishToMQTT();
+    String deviceData = "{\"chipId\": \"" + String(ESP.getChipId()) + "\", \"name\": \"" + String(DEVICE_NAME) + "\", \"ip\": \"" + String(WiFi.localIP()) + "\"}";
+    publishToMQTT(MQTT_DEVICE_TOPIC_FULL, deviceData, true);
+    publishToMQTT(MQTT_STATE_TOPIC, (relayState ? "on" : "off"), true);
   }
   return client.connected();
 }
@@ -101,10 +107,14 @@ void receiveFromMQTT(const MQTT::Publish& pub) {
   digitalWrite(STATLED, true);
 }
 
-void publishToMQTT() {
-  if (client.connected()) {
-    client.publish(MQTT::Publish(MQTT_STATE_TOPIC, (relayState ? "on" : "off")).set_retain());
+bool publishToMQTT(String topic, String payload, bool retain) {
+  if (!client.connected()) {
+    connectToMQTT();
   }
+  if (retain) {
+    return client.publish(MQTT::Publish(topic, payload).set_retain());
+  }
+  return client.publish(topic, payload);
 }
 
 boolean connectToWiFi() {
@@ -166,7 +176,8 @@ void setup() {
   server.on("/mqttreconnect", mqttReConnect);
   server.begin();
 
-  MQTT_UPDATE_TOPIC_FULL = MQTT_DEVICE_TOPIC + String(ESP.getChipId()) + String("/update");
+  MQTT_DEVICE_TOPIC_FULL = MQTT_DEVICE_TOPIC + String(ESP.getChipId());
+  MQTT_UPDATE_TOPIC_FULL = MQTT_DEVICE_TOPIC_FULL + String("/update");
   client.set_server(MQTT_BROKER_ADDRESS, MQTT_BROKER_PORT);
   client.set_callback(receiveFromMQTT);
   lastMQTTReconnectAttempt = 0;
