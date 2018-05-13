@@ -56,6 +56,20 @@ void handleRoot() {
   server.send(200, "text/html", body);
 }
 
+void serveJSON() {
+  String json = "{\"deviceName\": \"" + String(DEVICE_NAME) + "\","
+              + "\"chipId\": \"" + String(ESP.getChipId()) + "\","
+              + "\"sketchSize\": \"" + String(ESP.getSketchSize()) + "\","
+              + "\"freeSketchSize\": \"" + String(ESP.getFreeSketchSpace()) + "\","
+              + "\"flashSize\": \" + String(ESP.getFlashChipSize()) + \","
+              + "\"realFlashSize\": \" + String(ESP.getFlashChipRealSize()) + \","
+              + "\"updateTopic\": \"" + MQTT_UPDATE_TOPIC_FULL + "\","
+              + "\"relayState\": \"" + (relayState ? "on" : "off") + "\","
+              + "\"mqttState\": \"" + (client.connected() ? "connected" : "disconnected") + "\""
+              + "}";
+  server.send(200, "application/json", json);
+}
+
 boolean connectToMQTT() {
   String clientId = DEVICE_NAME;
   if (client.connect(clientId.c_str())) {
@@ -163,6 +177,7 @@ void setup() {
   connectToWiFi();
 
   server.on("/", handleRoot);
+  server.on("/json", serveJSON);
   server.begin();
 
   ESPhttpUpdate.rebootOnUpdate(false);
