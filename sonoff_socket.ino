@@ -36,10 +36,9 @@ void setRelay(boolean state) {
 
 void serveJSON() {
   String json = "{\"deviceName\": \"" + String(DEVICE_NAME) + "\","
-              + "\"chipId\": \"" + String(ESP.getChipId()) + "\","
               + "\"sketchSize\": \"" + String(ESP.getSketchSize()) + "\","
               + "\"freeSketchSize\": \"" + String(ESP.getFreeSketchSpace()) + "\","
-              + "\"flashSize\": \" + String(ESP.getFlashChipSize()) + \","
+              + "\"flashChipSize\": \" + String(ESP.getFlashChipSize()) + \","
               + "\"realFlashSize\": \" + String(ESP.getFlashChipRealSize()) + \","
               + "\"updateTopic\": \"" + MQTT_UPDATE_TOPIC_FULL + "\","
               + "\"relayState\": \"" + (relayState ? "on" : "off") + "\","
@@ -60,12 +59,12 @@ void mqttReConnect() {
 }
 
 boolean connectToMQTT() {
-  MQTT::Connect con(String(ESP.getChipId()).c_str());
+  MQTT::Connect con(String(DEVICE_NAME).c_str());
   con.set_will(MQTT_DEVICE_TOPIC_FULL, "");
   if (client.connect(con)) {
     client.subscribe(MQTT_CONTROL_TOPIC);
     client.subscribe(MQTT_UPDATE_TOPIC_FULL);
-    String deviceData = "{\"chipId\": \"" + String(ESP.getChipId()) + "\", \"name\": \"" + String(DEVICE_NAME) + "\", \"ip\": \"" + String(WiFi.localIP()) + "\"}";
+    String deviceData = "{\"name\": \"" + String(DEVICE_NAME) + "\", \"ip\": \"" + String(WiFi.localIP()) + "\"}";
     publishToMQTT(MQTT_DEVICE_TOPIC_FULL, deviceData, true);
     publishToMQTT(MQTT_STATE_TOPIC, (relayState ? "on" : "off"), true);
   }
@@ -176,7 +175,7 @@ void setup() {
   server.on("/mqttreconnect", mqttReConnect);
   server.begin();
 
-  MQTT_DEVICE_TOPIC_FULL = MQTT_DEVICE_TOPIC + String(ESP.getChipId());
+  MQTT_DEVICE_TOPIC_FULL = MQTT_DEVICE_TOPIC + String(DEVICE_NAME);
   MQTT_UPDATE_TOPIC_FULL = MQTT_DEVICE_TOPIC_FULL + String("/update");
   client.set_server(MQTT_BROKER_ADDRESS, MQTT_BROKER_PORT);
   client.set_callback(receiveFromMQTT);
