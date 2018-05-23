@@ -1,0 +1,35 @@
+{
+  "name": "sonoff_socket",
+  "version": "1.0.0",
+  "description": "Firmware for Sonoff Socket S20. This firmware supports MQTT and Home Assistant",
+  "main": "",
+  "scripts": {
+    "gulp": "./node_modules/gulp/bin/gulp.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gyengus/sonoff_socket_firmware.git"
+  },
+  "keywords": [
+    "iot",
+	"sonoff",
+	"mqtt"
+	"home assistant"
+  ],
+  "author": "Gyengus",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/gyengus/sonoff_socket_firmware/issues"
+  },
+  "homepage": "https://gyengus.hu/",
+  "devDependencies": {
+    "gulp": "^3.9.1",
+    "minimist": "^1.2.0",
+    "mqtt": "^2.18.0",
+    "plugin-error": "^1.0.1",
+    "rimraf": "^2.6.2",
+    "run-sequence": "^2.2.1"
+  },
+  "dependencies": {}
+}

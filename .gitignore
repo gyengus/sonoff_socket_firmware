@@ -1,4 +1,10 @@
+build
+node_modules
+buildConfig.json
 config.h
+package-lock.json
 info.txt
 *.swp
 *.zip
+*.png
+*.bin

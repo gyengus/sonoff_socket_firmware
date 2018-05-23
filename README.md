@@ -5,25 +5,62 @@ This firmware supports MQTT and Home Assistant
 
 #### Configuration
 
-You can see config.example.h, copy it to config.h and fill out the variables:
-```c
-#define DEVICE_NAME "esp8266-sonoff-socket-1"
-
-#define MQTT_BROKER_ADDRESS ""
-#define MQTT_BROKER_PORT 1883
-#define MQTT_STATE_TOPIC ""
-#define MQTT_CONTROL_TOPIC ""
-#define MQTT_DEVICE_TOPIC ""
-
-const char *sta_ssid = "";
-const char *sta_password = "";
+You can see buildConfig.example.json, copy it to buildConfig.json and fill out the variables:
+```json
+{
+    "arduino":{
+        "root":"/opt/arduino/",
+        "cmd":"arduino-builder",
+        "hardware":"hardware",
+        "tools":"tools-builder",
+        "libraries":"libraries",
+        "src":"sonoff_socket.ino",
+        "build-path":"build"
+    },
+    "mqtt":{
+        "host":"192.168.x.x",
+        "port":1883,
+        "clientId":"device-updater",
+        "name":"username",
+        "password":"secret password",
+        "deviceTopicPrefix":"device/"
+    },
+    "wifi":{
+        "ssid":"",
+        "password":""
+    },
+    "devices":{
+        "sonoff-socket-s20":{
+            "topic":"",
+            "mqttUser":"sonoff",
+            "mqttPassword":"password",
+            "fqbn":"esp8266com:esp8266:generic",
+            "hardware":"hardware/esp8266com/esp8266/libraries",
+            "tools":"hardware/esp8266com/esp8266/tools/",
+            "libraries":"hardware/esp8266com/esp8266/libraries",
+            "prefs":[
+                "build.flash_ld=/opt/arduino/hardware/esp8266com/esp8266/tools/sdk/ld/eagle.flash.1m64.ld",
+                "build.flash_freq=40",
+                "build.flash_size=1M",
+                "build.flash_mode=QIO",
+                "build.f_cpu=80000000"
+            ]
+        }
+    }
+}
 ```
 
-#### Firmware updates OTA
+#### Install dependencies
 
-Example command:
 ```bash
-mosquitto_pub -h {MQTT_BROKER_ADDRESS} -t '{MQTT_DEVICE_TOPIC}{DEVICE_ID}/update' -r -f ./sonoff_socket.ino.bin
+npm install
+```
+
+#### Generate configuration, build and update firmware
+
+Just run this command:
+```bash
+gulp --device=sonoff-socket-s20
 ```
 
 #### Home Assistant
@@ -46,7 +83,7 @@ group:
     entities:
       - switch.ejjeli_lampa
 ```
-customize.yml
+customize.yml:
 ```
   switch.ejjeli_lampa:
     icon: mdi:lamp

@@ -24,6 +24,7 @@ Ticker btn_timer;
 unsigned long btnCount = 0;
 String MQTT_UPDATE_TOPIC_FULL = "";
 String MQTT_DEVICE_TOPIC_FULL = "";
+String MQTT_STATE_TOPIC = "";
 boolean requireRestart = false;
 
 bool publishToMQTT(String topic, String payload, bool retain = true);
@@ -62,7 +63,7 @@ boolean connectToMQTT() {
   MQTT::Connect con(String(DEVICE_NAME).c_str());
   con.set_will(MQTT_DEVICE_TOPIC_FULL, "");
   if (client.connect(con)) {
-    client.subscribe(MQTT_CONTROL_TOPIC);
+    client.subscribe(MQTT_TOPIC);
     client.subscribe(MQTT_UPDATE_TOPIC_FULL);
     String deviceData = "{\"name\": \"" + String(DEVICE_NAME) + "\", \"ip\": \"" + String(WiFi.localIP()) + "\"}";
     publishToMQTT(MQTT_DEVICE_TOPIC_FULL, deviceData, true);
@@ -79,7 +80,7 @@ void receiveFromMQTT(const MQTT::Publish& pub) {
   Serial.println();
 
   digitalWrite(STATLED, false);
-  if (pub.topic() == MQTT_CONTROL_TOPIC) {
+  if (pub.topic() == MQTT_TOPIC) {
 	  if (pub.payload_string() == "on") {
 		  setRelay(true);
 	  } else {
@@ -177,6 +178,7 @@ void setup() {
 
   MQTT_DEVICE_TOPIC_FULL = MQTT_DEVICE_TOPIC + String(DEVICE_NAME);
   MQTT_UPDATE_TOPIC_FULL = MQTT_DEVICE_TOPIC_FULL + String("/update");
+  MQTT_STATE_TOPIC = MQTT_TOPIC + String("/state");
   client.set_server(MQTT_BROKER_ADDRESS, MQTT_BROKER_PORT);
   client.set_callback(receiveFromMQTT);
   lastMQTTReconnectAttempt = 0;
