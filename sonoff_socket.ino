@@ -62,6 +62,10 @@ void mqttReConnect() {
 boolean connectToMQTT() {
   MQTT::Connect con(String(DEVICE_NAME).c_str());
   con.set_will(MQTT_DEVICE_TOPIC_FULL, "");
+  con.set_keepalive(30);
+  if (MQTT_USER) {
+    con.set_auth(MQTT_USER, MQTT_PASSWORD);
+  }
   if (client.connect(con)) {
     client.subscribe(MQTT_TOPIC);
     client.subscribe(MQTT_UPDATE_TOPIC_FULL);
@@ -76,7 +80,7 @@ void receiveFromMQTT(const MQTT::Publish& pub) {
   Serial.print("Message arrived [");
   Serial.print(pub.topic());
   Serial.print("] Size: " + String(pub.payload_len()) + " B");
-  
+
   Serial.println();
 
   digitalWrite(STATLED, false);
