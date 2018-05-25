@@ -13,9 +13,9 @@
   },
   "keywords": [
     "iot",
-	"sonoff",
-	"mqtt"
-	"home assistant"
+    "sonoff",
+    "mqtt",
+    "home assistant"
   ],
   "author": "Gyengus",
   "license": "ISC",
