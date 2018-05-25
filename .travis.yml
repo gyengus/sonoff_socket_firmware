@@ -19,7 +19,7 @@ install:
   - npm install -g gulp
 
 script:
-  - cd ${HOME}/gyengus/sonoff_socket_firmware
+  - cd ${HOME}/build/gyengus/sonoff_socket_firmware
   - npm install
   - cp buildConfig.travis.json buildConfig.json
   - gulp generate --device=sonoff-socket-s20
