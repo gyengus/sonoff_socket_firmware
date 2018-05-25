@@ -36,7 +36,8 @@ void setRelay(boolean state) {
 }
 
 void serveJSON() {
-  String json = "{\"deviceName\": \"" + String(DEVICE_NAME) + "\","
+  String json = "{\"buildDate\": \"" + String(BUILD_DATE) + "\","
+              + "\"deviceName\": \"" + String(DEVICE_NAME) + "\","
               + "\"sketchSize\": \"" + String(ESP.getSketchSize()) + "\","
               + "\"freeSketchSize\": \"" + String(ESP.getFreeSketchSpace()) + "\","
               + "\"flashChipSize\": \" + String(ESP.getFlashChipSize()) + \","
@@ -173,6 +174,7 @@ void setup() {
   delay(100);
 
   Serial.println("");
+  Serial.println("Build date: " + String(BUILD_DATE) + "\n");
 
   connectToWiFi();
 

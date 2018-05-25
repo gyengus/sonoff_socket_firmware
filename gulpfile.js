@@ -7,6 +7,17 @@ var fs = require('fs');
 var rimraf = require('rimraf');
 var mqtt = require('mqtt');
 
+// Date format: yyyy-mm-dd H:i:s
+global.getFormattedDate = function() {
+	var time = new Date();
+	var month = ((time.getMonth() + 1) > 9 ? '' : '0') + (time.getMonth() + 1);
+	var day = (time.getDate() > 9 ? '' : '0') + time.getDate();
+	var hour = (time.getHours() > 9 ? '' : '0') + time.getHours();
+	var minute = (time.getMinutes() > 9 ? '' : '0') + time.getMinutes();
+	var second = (time.getSeconds() > 9 ? '' : '0') + time.getSeconds();
+	return time.getFullYear() + '-' + month + '-' + day + ' ' + hour + ':' + minute + ':' + second;
+};
+
 var buildConfig = JSON.parse(fs.readFileSync('./buildConfig.json', 'utf8'));
 
 var device = argv.device;
@@ -35,7 +46,8 @@ gulp.task('generate', function(callback) {
 			+ '#define MQTT_TOPIC "' + buildConfig.devices[device].topic + '"\n'
 			+ '#define MQTT_DEVICE_TOPIC "' + buildConfig.mqtt.deviceTopicPrefix + '"\n\n'
 			+ 'const char *sta_ssid = "' + buildConfig.wifi.ssid + '";\n'
-			+ 'const char *sta_password = "' + buildConfig.wifi.password + '";\n';
+			+ 'const char *sta_password = "' + buildConfig.wifi.password + '";\n'
+			+ '#define BUILD_DATE "' + getFormattedDate() + '"\n';
 		fs.writeFileSync('./config.h', buf);
 		callback();
 	} else {
