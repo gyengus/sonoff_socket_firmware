@@ -1,5 +1,7 @@
 # Sonoff Socket S20 firmware
 
+[![Build Status](https://travis-ci.org/gyengus/sonoff_socket_firmware.svg?branch=master)](https://travis-ci.org/gyengus/sonoff_socket_firmware)
+
 Firmware for [Sonoff Socket S20](https://www.banggood.com/SONOFF-S20-10A-2200W-Wifi-Wireless-Remote-Control-Socket-Smart-Timer-Plug-Smart-Home-Power-Socket-Support-Alexa-p-1142285.html?p=5O07141883558201507E)
 This firmware supports MQTT and Home Assistant
 
