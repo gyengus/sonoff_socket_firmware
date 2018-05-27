@@ -1,0 +1,27 @@
+dist: trusty
+sudo: required
+
+language: c++
+
+env:
+  - ARDUINO_VERSION=1.8.5 ARDUINO_ROOT=/opt/arduino ARDUINO_ESP8266_ROOT=${ARDUINO_ROOT}/hardware/esp8266com/esp8266
+
+before-install:
+  - apt-get update -qq && apt-get upgrade -qq
+
+install:
+  - pwd
+  - ( cd /opt && wget https://downloads.arduino.cc/arduino-${ARDUINO_VERSION}-linux64.tar.xz && tar xf arduino-${ARDUINO_VERSION}-linux64.tar.xz && mv arduino-${ARDUINO_VERSION} arduino)
+  - git clone https://github.com/esp8266/Arduino.git ${ARDUINO_ESP8266_ROOT}
+  - cd ${ARDUINO_ESP8266_ROOT}
+  - git submodule init && git submodule update
+  - ( cd tools && python get.py )
+  - npm install -g gulp
+
+script:
+  - cd ${HOME}/build/gyengus/sonoff_socket_firmware
+  - npm install
+  - cp buildConfig.travis.json buildConfig.json
+  - gulp generate --device=sonoff-socket-s20
+  - gulp build --device=sonoff-socket-s20
+
