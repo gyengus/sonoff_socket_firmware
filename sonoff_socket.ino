@@ -51,6 +51,13 @@ void serveJSON() {
   server.send(200, "application/json", json);
 }
 
+void mqttDisConnect() {
+  if (client.connected()) {
+    client.disconnect();
+    delay(10);
+  }
+  serveJSON();
+}
 void mqttReConnect() {
   if (client.connected()) {
     client.disconnect();
@@ -184,6 +191,7 @@ void setup() {
 
   server.on("/", serveJSON);
   server.on("/mqttreconnect", mqttReConnect);
+  server.on("/mqttdisconnect", mqttDisConnect);
   server.begin();
 
   MQTT_DEVICE_TOPIC_FULL = MQTT_DEVICE_TOPIC + String(DEVICE_NAME);
