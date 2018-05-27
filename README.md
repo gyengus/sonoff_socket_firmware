@@ -8,47 +8,56 @@ This firmware supports MQTT and Home Assistant
 You can see buildConfig.example.json, copy it to buildConfig.json and fill out the variables:
 ```json
 {
-    "arduino":{
-        "root":"/opt/arduino/",
-        "cmd":"arduino-builder",
-        "hardware":"hardware",
-        "tools":"tools-builder",
-        "libraries":"libraries",
-        "src":"sonoff_socket.ino",
-        "build-path":"build"
-    },
-    "mqtt":{
-        "host":"192.168.x.x",
-        "port":1883,
-        "clientId":"device-updater",
-        "name":"username",
-        "password":"secret password",
-        "deviceTopicPrefix":"device/"
-    },
-    "wifi":{
-        "ssid":"",
-        "password":""
-    },
-    "devices":{
-        "sonoff-socket-s20":{
-            "topic":"",
-            "mqttUser":"sonoff",
-            "mqttPassword":"password",
-            "fqbn":"esp8266com:esp8266:generic",
-            "hardware":"hardware/esp8266com/esp8266/libraries",
-            "tools":"hardware/esp8266com/esp8266/tools/",
-            "libraries":"hardware/esp8266com/esp8266/libraries",
-            "prefs":[
-                "build.flash_ld=/opt/arduino/hardware/esp8266com/esp8266/tools/sdk/ld/eagle.flash.1m64.ld",
-                "build.flash_freq=40",
-                "build.flash_size=1M",
-                "build.flash_mode=QIO",
-                "build.f_cpu=80000000"
-            ]
-        }
-    }
+	"arduino": {
+		"root": "/opt/arduino/",
+		"cmd": "arduino-builder",
+		"hardware": "hardware",
+		"tools": "tools-builder",
+		"libraries": "libraries",
+		"src": "sonoff_socket.ino",
+		"build-path": "build"
+	},
+	"mqtt": {
+		"host": "192.168.x.x",
+		"port": 1883,
+		"clientId": "device-updater",
+		"name": "username",
+		"password": "secret password",
+		"deviceTopicPrefix": "device/"
+	},
+	"wifi": {
+		"ssid": "",
+		"password": ""
+	},
+	"devices": {
+		"sonoff-socket-s20": {
+			"mqttHost": "192.168.x.x",
+			"mqttPort": 1883,
+			"mqttUser": "sonoff",
+			"mqttPassword": "password",
+			"topic": "",
+			"fqbn": "esp8266com:esp8266:generic",
+			"hardware": "hardware/esp8266com/esp8266/libraries",
+			"tools": "hardware/esp8266com/esp8266/tools/",
+			"libraries": "hardware/esp8266com/esp8266/libraries",
+			"prefs": [
+				"build.flash_ld=/opt/arduino/hardware/esp8266com/esp8266/tools/sdk/ld/eagle.flash.1m64.ld",
+				"build.flash_freq=40",
+				"build.flash_size=1M",
+				"build.flash_mode=DOUT",
+				"build.f_cpu=80000000"
+			]
+		}
+	}
 }
+
 ```
+#### Requirements
+
+- Arduino, tested with 1.8.5
+- [Arduino core for ESP8266 WiFi chip](https://github.com/esp8266/Arduino)
+- NodeJS
+- Gulp
 
 #### Install dependencies
 
