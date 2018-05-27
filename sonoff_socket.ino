@@ -70,18 +70,23 @@ void mqttReConnect() {
 }
 
 boolean connectToMQTT() {
-  MQTT::Connect con(String(DEVICE_NAME).c_str());
+  Serial.print("Trying to connect MQTT broker...");
+  MQTT::Connect con(DEVICE_NAME);
+  con.set_clean_session();
   con.set_will(MQTT_DEVICE_TOPIC_FULL, "");
   con.set_keepalive(30);
   if (MQTT_USER) {
     con.set_auth(MQTT_USER, MQTT_PASSWORD);
   }
   if (client.connect(con)) {
+    Serial.println(" success");
     client.subscribe(MQTT_TOPIC);
     client.subscribe(MQTT_UPDATE_TOPIC_FULL);
     String deviceData = "{\"name\": \"" + String(DEVICE_NAME) + "\", \"ip\": \"" + WiFi.localIP().toString() + "\", \"mac\": \"" + macAddress + "\"}";
     publishToMQTT(MQTT_DEVICE_TOPIC_FULL, deviceData, true);
     publishToMQTT(MQTT_STATE_TOPIC, (relayState ? "on" : "off"), true);
+  } else {
+    Serial.println(" failed");
   }
   return client.connected();
 }
@@ -106,13 +111,15 @@ void receiveFromMQTT(const MQTT::Publish& pub) {
     if (size == 0) {
       Serial.println("Error, sketch size is 0 B");
     } else {
-      Serial.println("Receiving OTA of " + String(size) + " bytes...");
+      Serial.println("Receiving firmware update of " + String(size) + " bytes...");
       Serial.setDebugOutput(true);
       ESP.wdtFeed();
       if (ESP.updateSketch(*pub.payload_stream(), size, false, false)) {
         ESP.wdtFeed();
         Serial.println("Clearing retained message.");
         client.publish(MQTT::Publish(pub.topic(), "").set_retain());
+        ESP.wdtFeed();
+        client.disconnect();
         Serial.println("Update success");
         requireRestart = true;
       }
