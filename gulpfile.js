@@ -39,14 +39,14 @@ gulp.task('generate', function(callback) {
 	if (buildConfig.devices[device]) {
 		var buf = "";
 		buf = '#define DEVICE_NAME "' + device + '"\n\n'
-			+ '#define MQTT_BROKER_ADDRESS "' + buildConfig.mqtt.host + '"\n'
-			+ '#define MQTT_BROKER_PORT ' + buildConfig.mqtt.port + '\n'
+			+ '#define MQTT_BROKER_ADDRESS "' + buildConfig.devices[device].mqttHost + '"\n'
+			+ '#define MQTT_BROKER_PORT ' + buildConfig.devices[device].mqttPort + '\n'
 			+ '#define MQTT_USER "' + buildConfig.devices[device].mqttUser + '"\n'
 			+ '#define MQTT_PASSWORD "' + buildConfig.devices[device].mqttPassword + '"\n'
 			+ '#define MQTT_TOPIC "' + buildConfig.devices[device].topic + '"\n'
 			+ '#define MQTT_DEVICE_TOPIC "' + buildConfig.mqtt.deviceTopicPrefix + '"\n\n'
 			+ 'const char *sta_ssid = "' + buildConfig.wifi.ssid + '";\n'
-			+ 'const char *sta_password = "' + buildConfig.wifi.password + '";\n'
+			+ 'const char *sta_password = "' + buildConfig.wifi.password + '";\n\n'
 			+ '#define BUILD_DATE "' + getFormattedDate() + '"\n';
 		fs.writeFileSync('./config.h', buf);
 		callback();
