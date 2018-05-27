@@ -17,6 +17,7 @@ ESP8266WebServer server(80);
 WiFiClient espClient;
 PubSubClient client(espClient);
 
+String macAddress = "";
 int relayState = 0;
 long lastMQTTReconnectAttempt = 0;
 long lastWiFiReconnectAttempt = 0;
@@ -38,6 +39,7 @@ void setRelay(boolean state) {
 void serveJSON() {
   String json = "{\"buildDate\": \"" + String(BUILD_DATE) + "\","
               + "\"deviceName\": \"" + String(DEVICE_NAME) + "\","
+              + "\"mac\": \"" + macAddress + "\","
               + "\"sketchSize\": \"" + String(ESP.getSketchSize()) + "\","
               + "\"freeSketchSize\": \"" + String(ESP.getFreeSketchSpace()) + "\","
               + "\"flashChipSize\": \" + String(ESP.getFlashChipSize()) + \","
@@ -70,7 +72,7 @@ boolean connectToMQTT() {
   if (client.connect(con)) {
     client.subscribe(MQTT_TOPIC);
     client.subscribe(MQTT_UPDATE_TOPIC_FULL);
-    String deviceData = "{\"name\": \"" + String(DEVICE_NAME) + "\", \"ip\": \"" + String(WiFi.localIP()) + "\"}";
+    String deviceData = "{\"name\": \"" + String(DEVICE_NAME) + "\", \"ip\": \"" + WiFi.localIP().toString() + "\", \"mac\": \"" + macAddress + "\"}";
     publishToMQTT(MQTT_DEVICE_TOPIC_FULL, deviceData, true);
     publishToMQTT(MQTT_STATE_TOPIC, (relayState ? "on" : "off"), true);
   }
@@ -163,6 +165,7 @@ void handleButton() {
 }
 
 void setup() {
+  macAddress = WiFi.macAddress();
   ESP.wdtDisable();
   pinMode(STATLED, OUTPUT);
   digitalWrite(STATLED, false);
@@ -174,7 +177,8 @@ void setup() {
   delay(100);
 
   Serial.println("");
-  Serial.println("Build date: " + String(BUILD_DATE) + "\n");
+  Serial.println("Build date: " + String(BUILD_DATE));
+  Serial.println("MAC address: " + macAddress + "\n");
 
   connectToWiFi();
 
