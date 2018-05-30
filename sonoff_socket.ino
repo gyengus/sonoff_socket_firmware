@@ -112,14 +112,13 @@ void receiveFromMQTT(const MQTT::Publish& pub) {
       Serial.println("Error, sketch size is 0 B");
     } else {
       Serial.println("Receiving firmware update of " + String(size) + " bytes...");
-      Serial.setDebugOutput(true);
+      Serial.setDebugOutput(false);
       ESP.wdtFeed();
       if (ESP.updateSketch(*pub.payload_stream(), size, false, false)) {
         ESP.wdtFeed();
         Serial.println("Clearing retained message.");
-        client.publish(MQTT::Publish(pub.topic(), "").set_retain());
+        publishToMQTT(MQTT_UPDATE_TOPIC_FULL, "", true);
         ESP.wdtFeed();
-        client.disconnect();
         Serial.println("Update success");
         requireRestart = true;
       }
@@ -133,9 +132,12 @@ bool publishToMQTT(String topic, String payload, bool retain) {
     connectToMQTT();
   }
   if (retain) {
-    return client.publish(MQTT::Publish(topic, payload).set_retain());
+    client.publish(MQTT::Publish(topic, payload).set_retain());
+  } else {
+    client.publish(topic, payload);
   }
-  return client.publish(topic, payload);
+  client.loop();
+  return true;
 }
 
 boolean connectToWiFi() {
@@ -217,10 +219,12 @@ void setup() {
 void loop() {
   ESP.wdtFeed();
   if (requireRestart) {
+    client.loop();
     requireRestart = false;
     Serial.println("Reboot...");
     client.disconnect();
     ESP.wdtDisable();
+    delay(200);
     ESP.restart();
     while (1) {
       ESP.wdtFeed();
