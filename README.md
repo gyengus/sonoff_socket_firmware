@@ -73,6 +73,10 @@ Just run this command:
 ```bash
 gulp --device=sonoff-socket-s20
 ```
+Demonstration video:  
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=n3-B3gR0dng
+" target="_blank"><img src="http://img.youtube.com/vi/n3-B3gR0dng/0.jpg" 
+alt="" width="240" height="180" border="10" /></a>
 
 #### Home Assistant
 
