@@ -1,6 +1,7 @@
 # Sonoff Socket S20 firmware
 
 [![Build Status](https://travis-ci.org/gyengus/sonoff_socket_firmware.svg?branch=master)](https://travis-ci.org/gyengus/sonoff_socket_firmware)
+[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=K5PAV5V7WGWFL)
 
 Firmware for [Sonoff Socket S20](https://www.banggood.com/SONOFF-S20-10A-2200W-Wifi-Wireless-Remote-Control-Socket-Smart-Timer-Plug-Smart-Home-Power-Socket-Support-Alexa-p-1142285.html?p=5O07141883558201507E)
 This firmware supports MQTT and Home Assistant
@@ -78,6 +79,7 @@ Demonstration video:
 " target="_blank"><img src="http://img.youtube.com/vi/n3-B3gR0dng/0.jpg" 
 alt="" width="240" height="180" border="10" /></a>
 
+
 #### Home Assistant
 
 configuration.yaml:
@@ -107,3 +109,8 @@ customize.yml:
 
 
 For more information check out my [page](https://gyengus.hu/2017/10/sonoff-smart-socket-es-home-assistant/).
+
+#### Donations
+- PayPal: https://paypal.me/gyengus
+- Bitcoin: 1QJzLBK9uQP4RthmKJRQwy3v5sd4XS4S7P
+- Ethereum: 0x2bD68120A56acBf6Dbd11da2060228b8912C1e3C
