@@ -38,7 +38,8 @@ gulp.task('generate', function(callback) {
 
 	if (buildConfig.devices[device]) {
 		var buf = "";
-		buf = '#define DEVICE_NAME "' + device + '"\n\n'
+		buf = '#define DEVICE_NAME "' + device + '"\n'
+			+ '#define DEVICE_DESCRIPTION "' + buildConfig.devices[device].description + '"\n\n'
 			+ '#define MQTT_BROKER_ADDRESS "' + buildConfig.devices[device].mqttHost + '"\n'
 			+ '#define MQTT_BROKER_PORT ' + buildConfig.devices[device].mqttPort + '\n'
 			+ '#define MQTT_USER "' + buildConfig.devices[device].mqttUser + '"\n'

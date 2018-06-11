@@ -39,6 +39,7 @@ void setRelay(boolean state) {
 void serveJSON() {
   String json = "{\"buildDate\": \"" + String(BUILD_DATE) + "\","
               + "\"deviceName\": \"" + String(DEVICE_NAME) + "\","
+              + "\"deviceDescription\": \"" + String(DEVICE_DESCRIPTION) + "\","
               + "\"mac\": \"" + macAddress + "\","
               + "\"sketchSize\": \"" + String(ESP.getSketchSize()) + "\","
               + "\"freeSketchSize\": \"" + String(ESP.getFreeSketchSpace()) + "\","
@@ -82,7 +83,7 @@ boolean connectToMQTT() {
     Serial.println(" success");
     client.subscribe(MQTT_TOPIC);
     client.subscribe(MQTT_UPDATE_TOPIC_FULL);
-    String deviceData = "{\"name\": \"" + String(DEVICE_NAME) + "\", \"ip\": \"" + WiFi.localIP().toString() + "\", \"mac\": \"" + macAddress + "\", \"buildDate\": \"" + String(BUILD_DATE) + "\"}";
+    String deviceData = "{\"name\": \"" + String(DEVICE_NAME) + "\", \"deviceDescription\": \"" + String(DEVICE_DESCRIPTION) + "\", \"ip\": \"" + WiFi.localIP().toString() + "\", \"mac\": \"" + macAddress + "\", \"buildDate\": \"" + String(BUILD_DATE) + "\"}";
     publishToMQTT(MQTT_DEVICE_TOPIC_FULL, deviceData, true);
     publishToMQTT(MQTT_STATE_TOPIC, (relayState ? "on" : "off"), true);
   } else {
