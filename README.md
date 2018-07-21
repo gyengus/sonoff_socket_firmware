@@ -106,9 +106,7 @@ customize.yml:
     icon: mdi:lamp
 ```
 
-
-
-For more information check out my [page](https://gyengus.hu/2017/10/sonoff-smart-socket-es-home-assistant/).
+For more information check out my page [here](https://gyengus.hu/2017/10/sonoff-smart-socket-es-home-assistant/) and [here](https://gyengus.hu/2018/07/vizmelegito-automatizalasa/).
 
 #### Donations
 - PayPal: https://paypal.me/gyengus
