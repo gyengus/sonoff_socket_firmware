@@ -19,8 +19,8 @@ PubSubClient client(espClient);
 
 String macAddress = "";
 int relayState = 0;
-long lastMQTTReconnectAttempt = 0;
-long lastWiFiReconnectAttempt = 0;
+unsigned long lastMQTTReconnectAttempt = 0;
+unsigned long lastWiFiReconnectAttempt = 0;
 Ticker btn_timer;
 unsigned long btnCount = 0;
 String MQTT_UPDATE_TOPIC_FULL = "";
@@ -238,8 +238,8 @@ void loop() {
     if (client.connected()) {
       client.loop();
     } else {
-      long now = millis();
-      if (now - lastMQTTReconnectAttempt > 5000) {
+      unsigned long now = millis();
+      if (now - lastMQTTReconnectAttempt >= 5000) {
         if (connectToMQTT()) {
           lastMQTTReconnectAttempt = 0;
         } else {
@@ -248,8 +248,8 @@ void loop() {
       }
     }
   } else {
-    long now = millis();
-    if (now - lastWiFiReconnectAttempt > 5000) {
+    unsigned long now = millis();
+    if (now - lastWiFiReconnectAttempt >= 2000) {
       if (connectToWiFi()) {
         lastWiFiReconnectAttempt = 0;
       } else {
