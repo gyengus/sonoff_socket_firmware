@@ -47,7 +47,8 @@ You can see buildConfig.example.json, copy it to buildConfig.json and fill out t
 				"build.flash_ld=/opt/arduino/hardware/esp8266com/esp8266/tools/sdk/ld/eagle.flash.1m0.ld",
 				"build.flash_freq=40",
 				"build.flash_size=1M",
-				"build.flash_mode=DOUT",
+				"build.flash_mode=dout",
+				"build.flash_flags=",
 				"build.f_cpu=80000000"
 			]
 		}
@@ -57,7 +58,7 @@ You can see buildConfig.example.json, copy it to buildConfig.json and fill out t
 ```
 #### Requirements
 
-- Arduino, tested with 1.8.5
+- Arduino, tested with 1.8.9
 - [Arduino core for ESP8266 WiFi chip](https://github.com/esp8266/Arduino)
 - NodeJS
 - Gulp

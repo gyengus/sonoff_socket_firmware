@@ -4,7 +4,7 @@ sudo: required
 language: c++
 
 env:
-  - ARDUINO_VERSION=1.8.5 ARDUINO_ROOT=/opt/arduino ARDUINO_ESP8266_ROOT=${ARDUINO_ROOT}/hardware/esp8266com/esp8266
+  - ARDUINO_VERSION=1.8.9 ARDUINO_ROOT=/opt/arduino ARDUINO_ESP8266_ROOT=${ARDUINO_ROOT}/hardware/esp8266com/esp8266
 
 before-install:
   - apt-get update -qq && apt-get upgrade -qq

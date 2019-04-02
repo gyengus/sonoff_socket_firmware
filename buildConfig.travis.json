@@ -36,7 +36,8 @@
 				"build.flash_ld=/opt/arduino/hardware/esp8266com/esp8266/tools/sdk/ld/eagle.flash.1m64.ld",
 				"build.flash_freq=40",
 				"build.flash_size=1M",
-				"build.flash_mode=DOUT",
+				"build.flash_mode=dout",
+				"build.flash_flags=",
 				"build.f_cpu=80000000"
 			]
 		}
