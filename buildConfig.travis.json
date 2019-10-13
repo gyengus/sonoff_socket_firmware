@@ -38,7 +38,8 @@
 				"build.flash_size=1M",
 				"build.flash_mode=dout",
 				"build.flash_flags=",
-				"build.f_cpu=80000000"
+				"build.f_cpu=80000000",
+				"runtime.tools.ctags.path=/opt/arduino/tools-builder/ctags/5.8-arduino11"
 			]
 		}
 	}
