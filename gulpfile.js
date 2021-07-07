@@ -18,7 +18,16 @@ global.getFormattedDate = function() {
 	return time.getFullYear() + '-' + month + '-' + day + ' ' + hour + ':' + minute + ':' + second;
 };
 
-var buildConfig = JSON.parse(fs.readFileSync('./buildConfig.json', 'utf8'));
+if (process.env.BUILDCONFIG_PATH) {
+	var buildConfigPath = process.env.BUILDCONFIG_PATH;
+} else {
+	var buildConfigPath = __dirname + '/buildConfig.json';
+}
+if (buildConfigPath && fs.existsSync(buildConfigPath)) {
+	var buildConfig = JSON.parse(fs.readFileSync(buildConfigPath, 'utf8'));
+} else {
+	throw new PluginError('gulp', 'buildConfig "' + buildConfigPath + '" not found.', {showStack: false});
+}
 
 var device = argv.device;
 
